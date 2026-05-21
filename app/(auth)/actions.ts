@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function loginAction(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
@@ -77,8 +78,11 @@ export async function registerAction(prevState: any, formData: FormData) {
     return { success: false, errors: { global: 'Error al crear la cuenta' } };
   }
 
+  // Use the admin client (service role) to insert database records bypassing RLS during registration
+  const adminSupabase = createAdminClient()
+
   // 2. Create Empresa (aprobada is false by default)
-  const { data: empresa, error: empresaError } = await supabase
+  const { data: empresa, error: empresaError } = await adminSupabase
     .from('empresas')
     .insert({
       nombre: nombreEmpresa,
@@ -101,7 +105,7 @@ export async function registerAction(prevState: any, formData: FormData) {
   }
 
   // 3. Create Profile linking User and Empresa
-  const { error: profileError } = await supabase.from('profiles').insert({
+  const { error: profileError } = await adminSupabase.from('profiles').insert({
     id: user.id,
     empresa_id: empresa.id,
     nombre_completo: nombreCompleto,
