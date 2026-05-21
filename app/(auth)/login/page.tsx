@@ -1,29 +1,57 @@
 'use client'
 
-import { useActionState, Suspense, useEffect } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { loginAction } from '../actions';
+import { createClient } from '@/lib/supabase/client';
 import { Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
 
-const initialState = {
-  success: false,
-  errors: {} as Record<string, string>,
-};
-
 function LoginForm() {
-  const [state, formAction, isPending] = useActionState(loginAction, initialState);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isPending, setIsPending] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const errorParam = searchParams.get('error');
   const redirectedFrom = searchParams.get('redirectedFrom');
 
-  useEffect(() => {
-    if (state?.success) {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsPending(true);
+    setErrors({});
+
+    const newErrors: Record<string, string> = {};
+    if (!email) newErrors.email = 'El correo electrónico es requerido';
+    if (!password) newErrors.password = 'La contraseña es requerida';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setIsPending(false);
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setErrors({ global: error.message });
+        setIsPending(false);
+        return;
+      }
+
       router.push('/catalogo');
       router.refresh();
+    } catch (err: any) {
+      setErrors({ global: err.message || 'Ocurrió un error inesperado' });
+      setIsPending(false);
     }
-  }, [state?.success, router]);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
@@ -56,10 +84,10 @@ function LoginForm() {
           </div>
         )}
 
-        {state?.errors?.global && (
+        {errors?.global && (
           <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-800 flex items-center gap-2.5">
             <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
-            <span>{state.errors.global}</span>
+            <span>{errors.global}</span>
           </div>
         )}
 
@@ -70,7 +98,7 @@ function LoginForm() {
         )}
 
         {/* Login Form */}
-        <form action={formAction} className="mt-8 space-y-6">
+        <form onSubmit={handleLogin} className="mt-8 space-y-6">
           <div className="space-y-4">
             {/* Email Field */}
             <div>
@@ -88,14 +116,16 @@ function LoginForm() {
                   autoComplete="email"
                   required
                   placeholder="ejemplo@farmacia.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className={`block w-full pl-10 pr-3 py-2.5 border rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0066CC] focus:border-[#0066CC] text-sm ${
-                    state?.errors?.email ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
+                    errors?.email ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
                   }`}
                 />
               </div>
-              {state?.errors?.email && (
+              {errors?.email && (
                 <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {state.errors.email}
+                  <AlertCircle className="h-3 w-3" /> {errors.email}
                 </p>
               )}
             </div>
@@ -116,14 +146,16 @@ function LoginForm() {
                   autoComplete="current-password"
                   required
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className={`block w-full pl-10 pr-3 py-2.5 border rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0066CC] focus:border-[#0066CC] text-sm ${
-                    state?.errors?.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
+                    errors?.password ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
                   }`}
                 />
               </div>
-              {state?.errors?.password && (
+              {errors?.password && (
                 <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {state.errors.password}
+                  <AlertCircle className="h-3 w-3" /> {errors.password}
                 </p>
               )}
             </div>
