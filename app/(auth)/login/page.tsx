@@ -1,8 +1,8 @@
 'use client'
 
-import { useActionState, Suspense } from 'react';
+import { useActionState, Suspense, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { loginAction } from '../actions';
 import { Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
 
@@ -14,8 +14,16 @@ const initialState = {
 function LoginForm() {
   const [state, formAction, isPending] = useActionState(loginAction, initialState);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const errorParam = searchParams.get('error');
   const redirectedFrom = searchParams.get('redirectedFrom');
+
+  useEffect(() => {
+    if (state?.success) {
+      router.push('/catalogo');
+      router.refresh();
+    }
+  }, [state?.success, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">

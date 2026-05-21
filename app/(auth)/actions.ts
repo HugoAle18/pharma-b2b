@@ -28,7 +28,7 @@ export async function loginAction(prevState: any, formData: FormData) {
     return { success: false, errors: { global: error.message } };
   }
 
-  redirect('/catalogo')
+  return { success: true, errors: {} };
 }
 
 export async function registerAction(prevState: any, formData: FormData) {
