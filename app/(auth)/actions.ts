@@ -56,15 +56,11 @@ export async function registerAction(prevState: any, formData: FormData) {
 
   const supabase = await createClient()
 
-  const headersList = await headers()
-  const origin = headersList.get('origin') || 'http://localhost:3000'
-
   // 1. Create User in Auth
   const { data: authData, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback`,
       data: {
         nombre_completo: nombreCompleto,
         role: 'cliente',
