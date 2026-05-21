@@ -45,8 +45,8 @@ function LoginForm() {
         return;
       }
 
-      router.push('/catalogo');
-      router.refresh();
+      await router.refresh();
+      window.location.href = '/catalogo';
     } catch (err: any) {
       setErrors({ global: err.message || 'Ocurrió un error inesperado' });
       setIsPending(false);

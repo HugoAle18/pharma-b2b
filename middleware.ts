@@ -31,80 +31,28 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // 1. Get current auth user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
 
   const pathname = request.nextUrl.pathname
 
-  // 2. Identify routes
-  const isPublicRoute =
-    pathname === '/' || pathname === '/login' || pathname === '/registro'
+  // Rutas privadas: /catalogo, /cotizaciones, /pedidos, /admin
   const isPrivateRoute =
     pathname.startsWith('/catalogo') ||
     pathname.startsWith('/cotizaciones') ||
-    pathname.startsWith('/pedidos')
-  const isAdminRoute = pathname.startsWith('/admin')
+    pathname.startsWith('/pedidos') ||
+    pathname.startsWith('/admin')
 
-  // 3. Routing protection
-  if (!user) {
-    if (isPrivateRoute || isAdminRoute) {
-      const redirectUrl = request.nextUrl.clone()
-      redirectUrl.pathname = '/login'
-      redirectUrl.searchParams.set('redirectedFrom', pathname)
-      return NextResponse.redirect(redirectUrl)
-    }
-  } else {
-    // User is logged in, perform profile checks
-    let isApproved = false
-    let isAdmin = false
+  if (!session && isPrivateRoute) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = '/login'
+    redirectUrl.searchParams.set('redirectedFrom', pathname)
+    return NextResponse.redirect(redirectUrl)
+  }
 
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('rol, empresa_id')
-        .eq('id', user.id)
-        .single()
-
-      if (profile) {
-        isAdmin = profile.rol === 'admin'
-        // MODIFICADO PARA DESARROLLO: Para facilitar las pruebas, permitimos el acceso sin verificar si la empresa está aprobada.
-        isApproved = true
-      }
-    } catch (error) {
-      console.error('Middleware database fetch error:', error)
-      isApproved = true
-    }
-
-    // Role-based restrictions
-    if (isAdminRoute && !isAdmin) {
-      const redirectUrl = request.nextUrl.clone()
-      redirectUrl.pathname = '/catalogo'
-      return NextResponse.redirect(redirectUrl)
-    }
-
-    // Approval restrictions
-    if (isPrivateRoute && !isApproved) {
-      const redirectUrl = request.nextUrl.clone()
-      redirectUrl.pathname = '/login'
-      redirectUrl.searchParams.set('error', 'pending_approval')
-      return NextResponse.redirect(redirectUrl)
-    }
-
-    // Redirect logged in and approved users away from login/register
-    if (isPublicRoute && pathname !== '/') {
-      if (isApproved) {
-        const redirectUrl = request.nextUrl.clone()
-        redirectUrl.pathname = isAdmin ? '/admin/productos' : '/catalogo'
-        return NextResponse.redirect(redirectUrl)
-      } else {
-        // If logged in but not approved, let them access public page or stay at login
-        if (pathname === '/login' || pathname === '/registro') {
-          // Allow showing the login page with the error parameter
-        }
-      }
-    }
+  if (session && (pathname === '/login' || pathname === '/registro')) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = '/catalogo'
+    return NextResponse.redirect(redirectUrl)
   }
 
   return response
