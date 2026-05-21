@@ -61,7 +61,6 @@ export async function crearCotizacionDesdeCarrito(
     producto_id: item.producto_id,
     cantidad: item.cantidad,
     precio_unitario: item.precio_unitario,
-    subtotal: item.subtotal,
   }));
 
   const { error: itemsError } = await supabase
