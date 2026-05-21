@@ -224,11 +224,13 @@ export default function QuoteDetailClient({
               <Calendar className="h-3.5 w-3.5" /> Fecha
             </span>
             <p className="text-sm font-semibold text-gray-800">
-              {new Date(cotizacion.created_at).toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
+              {cotizacion.created_at
+                ? new Date(cotizacion.created_at).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })
+                : 'No disponible'}
             </p>
           </div>
 
@@ -239,7 +241,9 @@ export default function QuoteDetailClient({
             <p className="text-sm font-semibold text-gray-800">
               {cotizacion.empresa?.nombre || 'No disponible'}
             </p>
-            <p className="text-[10px] text-gray-400">RUC: {cotizacion.empresa?.ruc}</p>
+            <p className="text-[10px] text-gray-400">
+              {cotizacion.empresa?.ruc ? `RUC: ${cotizacion.empresa.ruc}` : 'RUC no disponible'}
+            </p>
           </div>
 
           <div className="space-y-1">
@@ -288,10 +292,10 @@ export default function QuoteDetailClient({
                       {item.cantidad} unidades
                     </td>
                     <td className="px-6 py-4 text-gray-500">
-                      ${item.precio_unitario.toFixed(2)}
+                      ${typeof item.precio_unitario === 'number' ? item.precio_unitario.toFixed(2) : Number(item.precio_unitario || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-gray-900">
-                      ${item.subtotal.toFixed(2)}
+                      ${typeof item.subtotal === 'number' ? item.subtotal.toFixed(2) : Number(item.subtotal || (item.cantidad * item.precio_unitario) || 0).toFixed(2)}
                     </td>
                   </tr>
                 ))}
@@ -340,7 +344,7 @@ export default function QuoteDetailClient({
           <div className="flex flex-col justify-end items-end gap-1.5">
             <span className="text-xs font-bold text-gray-400 uppercase">Total Estimado</span>
             <span className="text-3xl font-extrabold text-[#003366]">
-              ${cotizacion.total_estimado.toFixed(2)}
+              ${typeof cotizacion.total_estimado === 'number' ? cotizacion.total_estimado.toFixed(2) : Number(cotizacion.total_estimado || 0).toFixed(2)}
             </span>
             <p className="text-[10px] text-gray-400">
               *Los precios no incluyen impuestos ni flete especial.
