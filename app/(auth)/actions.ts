@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 
 export async function loginAction(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
@@ -55,12 +56,15 @@ export async function registerAction(prevState: any, formData: FormData) {
 
   const supabase = await createClient()
 
+  const headersList = await headers()
+  const origin = headersList.get('origin') || 'http://localhost:3000'
+
   // 1. Create User in Auth
   const { data: authData, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('/rest/v1/', '')}/auth/v1/callback`,
+      emailRedirectTo: `${origin}/auth/callback`,
       data: {
         nombre_completo: nombreCompleto,
         role: 'cliente',
