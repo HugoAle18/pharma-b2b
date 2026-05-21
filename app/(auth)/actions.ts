@@ -104,13 +104,15 @@ export async function registerAction(prevState: any, formData: FormData) {
     };
   }
 
-  // 3. Create Profile linking User and Empresa
-  const { error: profileError } = await adminSupabase.from('profiles').insert({
-    id: user.id,
-    empresa_id: empresa.id,
-    nombre_completo: nombreCompleto,
-    rol: 'cliente',
-  })
+  // 3. Update existing Profile (created automatically by the database trigger) with the company relation
+  const { error: profileError } = await adminSupabase
+    .from('profiles')
+    .update({
+      empresa_id: empresa.id,
+      nombre_completo: nombreCompleto,
+      rol: 'cliente',
+    })
+    .eq('id', user.id)
 
   if (profileError) {
     return {
